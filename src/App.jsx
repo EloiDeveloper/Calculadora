@@ -5,7 +5,7 @@ import BotonIgual from "./components/boton-igual.jsx";
 import BotonClear from "./components/boton-clear.jsx";
 import Footer from "./components/footer.jsx";
 import Modal from "./components/modal.jsx";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { evaluate } from "mathjs";
 
 function App() {
@@ -16,11 +16,11 @@ function App() {
     setModalVisible(false);
   };
 
-  const agregarInput = (valor) => {
-    setInput(input + valor);
-  };
+  const agregarInput = useCallback((valor) => {
+    setInput((prevInput) => prevInput + valor);
+  }, []);
 
-  const calcularResultado = () => {
+  const calcularResultado = useCallback(() => {
     const resultado = evaluate(input);
     if (input) {
       if (resultado === Infinity || resultado === -Infinity) {
@@ -35,7 +35,30 @@ function App() {
     if (resultado === 3535) {
       setModalVisible(true);
     }
-  };
+  }, [input]);
+
+  // Capturar las pulsaciones de teclado
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      const key = event.key;
+      if (/[0-9+\-*/.=]/.test(key)) {
+        // Permitir números y operadores válidos
+        agregarInput(key);
+      } else if (key === "Backspace") {
+        // Si la tecla es "Backspace", eliminar el último carácter
+        setInput((prevInput) => prevInput.slice(0, -1));
+      } else if (key === "Enter") {
+        // Si la tecla es "Enter", calcula la pantalla
+        calcularResultado();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [input, agregarInput, calcularResultado]);
 
   return (
     <div className="App">
